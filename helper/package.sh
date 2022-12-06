@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
 PACKAGES=(
-    awesomeshot bat curl clang exa fzf git imagemagick
-    inotify-tools lf mpd mpc neovim openssh
-    neofetch termux-api tmux zsh
+    bat curl clang exa fzf git lf mpd
+    mpc neovim neofetch termux-api zsh
 )
 
 printInfoPackages() {
@@ -14,7 +13,7 @@ printInfoPackages() {
     KB_INSTALLED_SIZE=0
     MB_INSTALLED_SIZE=0
     
-    echo -e "  ╭─ myTermux Packages ──────────────────────────────────────────────────╮"
+    echo -e "  ╭─ Dependency Packages ────────────────────────────────────────────────╮"
     echo -e "  │                                                                      │"
     printf "  │    %-15s    %-10s    %-13s    %-14s  │\n" "Name" "Version" "Download Size" "Installed Size"
     printf "  │    %-15s    %-10s    %-13s    %-14s  │\n" "───────────────" "──────────" "─────────────" "──────────────"
@@ -60,38 +59,29 @@ printInfoPackages() {
     
     echo -e "  │                                                                      │"
     echo -e "  ╰──────────────────────────────────────────────────────────────────────╯\n"
-    echo -e "                                          ╭─ TOTAL ──────────────────────╮          "
-    echo -e "                                          │  · Download Size: ${COLOR_SUCCESS}${TOTAL_DOWNLOAD_SIZE}${COLOR_DEFAULT} MB    │            "
-    echo -e "                                          │  · Installed Size: ${COLOR_WARNING}${TOTAL_INSTALLED_SIZE}${COLOR_DEFAULT} MB  │           "
-    echo -e "                                          ╰──────────────────────────────╯          "
+    echo -e "                                    ╭─ TOTAL ──────────────────────╮          "
+    echo -e "                                    │  · Download Size: ${COLOR_SUCCESS}${TOTAL_DOWNLOAD_SIZE}${COLOR_DEFAULT} MB    │            "
+    echo -e "                                    │  · Installed Size: ${COLOR_WARNING}${TOTAL_INSTALLED_SIZE}${COLOR_DEFAULT} MB  │           "
+    echo -e "                                    ╰──────────────────────────────╯          "
 }
 
 function installPackages() {
     
     setCursor off
-    
-    echo -e "\n‏‏‎‏‏‎ ‎ ‎‏‏‎  ‎📦 Downloading Packages\n"
+    gum style --border rounded --margin '1 2' --padding '0 2' 'Downloading Packages'
     
     for PACKAGE in "${PACKAGES[@]}"; do
         
-        start_animation "       Installing ${COLOR_WARNING}'${COLOR_SUCCESS}${PACKAGE}${COLOR_WARNING}'${COLOR_BASED} ..."
-        
-        pkg i -y $PACKAGE &>/dev/null
-        THIS_PACKAGE=$(pkg list-installed $PACKAGE 2> /dev/null | tail -n 1)
-        CHECK_PACKAGE=${THIS_PACKAGE%/*}
-        
-        if [[ $CHECK_PACKAGE == $PACKAGE ]]; then
-            
-            stop_animation $? || exit 1
-            
+        if gum spin -s line --title "Installing ${PACKAGE}" -- pkg i -y "${PACKAGE}"; then
+            printf "  %-10s %-10s ${COLOR_SUCCESS}${OK}${COLOR_DEFAULT}\n" "Installing" "${PACKAGE}"
         else
-            
-            stop_animation $?
-            
+            printf "  %-10s %-10s ${COLOR_DANGER}${FAIL}${COLOR_DEFAULT}\n" "Installing" "${PACKAGE}"
         fi
         
     done
     
+    echo -e ""
     setCursor on
+    
     
 }

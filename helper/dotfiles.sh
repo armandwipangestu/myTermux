@@ -19,6 +19,9 @@ DOTFILES=(
 
 function dotFiles() {
     
+    KB_DOTFILE_SIZE=0
+    MB_DOTFILE_SIZE=0
+    
     setCursor off
     
     echo -e "  ╭─ Dotfiles ─────────────────────────────────────╮"
@@ -28,44 +31,64 @@ function dotFiles() {
     
     for DOTFILE in "${DOTFILES[@]}"; do
         
-        FOLDER_SIZE=$(du -s -h $DOTFILE | awk '{print $1}')
+        FOLDER_SIZE=$(du -s -h "${DOTFILE}" | awk '{print $1}')
+        UNIT_FOLDER_SIZE="${FOLDER_SIZE:0-1}"
+        # echo -e "${UNIT_FOLDER_SIZE}"
         printf "  │  · ${COLOR_BLUE}%-12s${COLOR_RESET}          ${COLOR_SUCCESS}%-18s${COLOR_RESET}    │\n" "$DOTFILE" "$FOLDER_SIZE"
+        
+        if [[ "${UNIT_FOLDER_SIZE}" == "K" ]]; then
+            KB_DOTFILE_SIZE=$(echo "${KB_DOTFILE_SIZE} + ${FOLDER_SIZE::-1} / 1024" | bc -l | xargs -i printf "%'.1f" {})
+            elif [[ "${UNIT_FOLDER_SIZE}" == "M" ]]; then
+            MB_DOTFILE_SIZE=$(echo "${MB_DOTFILE_SIZE} + ${FOLDER_SIZE::-1}" | bc -l | xargs -i printf "%'.1f" {})
+        fi
         
     done
     
+    TOTAL_DOTFILE_SIZE=$(echo "${KB_DOTFILE_SIZE} + ${MB_DOTFILE_SIZE}" | bc -l | xargs -i printf "%'.1f" {})
+    
     echo -e "  │                                                │"
     echo -e "  ╰────────────────────────────────────────────────╯\n"
+    echo -e "                               ╭─ TOTAL ───────────╮          "
+    echo -e "                               │  · Size: ${COLOR_SUCCESS}${TOTAL_DOTFILE_SIZE}${COLOR_DEFAULT} MB  │            "
+    echo -e "                               ╰───────────────────╯          "
     
 }
 
 function backupDotFiles() {
     
-    echo -e "‏‏‎‏‏‎ ‎ ‎‏‏‎  ‎📦 Backup Dotfiles"
-    echo -e ""
-    sleep 2s
+    read -rd "" restore <<"EOF"
+DOTFILE_NAME=(
+
+)
+EOF
+    
+    printf '%s\n' "${restore}" > "restore.txt"
+    
+    setCursor off
+    gum style --border rounded --margin '1 2' --padding '0 2' 'Backup Dotfiles'
     
     for BACKUP_DOTFILE in "${BACKUP_DOTFILES[@]}"; do
         
-        start_animation "       Backup ${COLOR_WARNING}'${COLOR_SUCCESS}${BACKUP_DOTFILE}${COLOR_WARNING}'${COLOR_BASED} ..."
-        sleep 1s
-        
         if [[ -d "$HOME/$BACKUP_DOTFILE" || -f "$HOME/$BACKUP_DOTFILE" ]]; then
             
-            mv ${HOME}/${BACKUP_DOTFILE} ${HOME}/${BACKUP_DOTFILE}.$(date +%Y.%m.%d-%H.%M.%S).backup
+            gum spin -s line --title "Backup ${BACKUP_DOTFILE}" -- sleep 2s
+            #mv "${HOME}/${BACKUP_DOTFILE}" "${HOME}/${BACKUP_DOTFILE}.$(date +%Y.%m.%d-%H.%M.%S).backup"
+            echo -e "$(date +%Y.%m.%d-%H.%M.%S)"
+            sed -i "2i ${BACKUP_DOTFILE}.$(date +%Y.%m.%d-%H.%M.%S)" restore.txt
             
             if [[ -d ${HOME}/${BACKUP_DOTFILE}.$(date +%Y.%m.%d-%H.%M.%S).backup || -f ${HOME}/${BACKUP_DOTFILE}.$(date +%Y.%m.%d-%H.%M.%S).backup ]]; then
                 
-                stop_animation $? || exit 1
+                printf "  %-6s %-10s ${COLOR_SUCCESS}${OK}${COLOR_DEFAULT}\n" "Backup" "${BACKUP_DOTFILE}"
                 
             else
                 
-                stop_animation $?
+                printf "  %-6s %-10s ${COLOR_DANGER}${FAIL}${COLOR_DEFAULT}\n" "Backup" "${BACKUP_DOTFILE}"
                 
             fi
             
         else
             
-            stop_animation $?
+            printf "  %-6s %-10s ${COLOR_DANGER}NOT FOUND${COLOR_DEFAULT}\n" "Backup" "${BACKUP_DOTFILE}"
             
         fi
         
